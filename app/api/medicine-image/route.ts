@@ -223,38 +223,52 @@ async function crawlGoogleImage(medicineName: string): Promise<string | null> {
           'pharm'
         ];
 
-        // 1차: 우선순위 패턴에 매칭되는 이미지
-        const priorityImages = imageMatches.filter(url => {
+        // 모든 이미지를 순서대로 평가 (첫 번째 이미지를 찾기 위해)
+        // 중복 제거
+        const uniqueImages = Array.from(new Set(imageMatches));
+
+        console.log(`[Debug] Unique images: ${uniqueImages.length}`);
+        console.log(`[Debug] First 5 images:`, uniqueImages.slice(0, 5).map(url => url.substring(0, 100)));
+
+        // 각 이미지를 순서대로 검사
+        for (const url of uniqueImages) {
           const lowerUrl = url.toLowerCase();
+
+          // 제외 패턴 체크
           const hasExcludePattern = excludePatterns.some(pattern => lowerUrl.includes(pattern));
+          if (hasExcludePattern) {
+            console.log(`[Skipped - Excluded] ${url.substring(0, 80)}`);
+            continue;
+          }
+
+          // 우선순위 패턴 체크
           const hasPriorityPattern = priorityPatterns.some(pattern => lowerUrl.includes(pattern));
-          return !hasExcludePattern && hasPriorityPattern;
-        });
 
-        if (priorityImages.length > 0) {
-          imageUrl = priorityImages[0];
-          console.log(`[Priority Image Selected] ${imageUrl.substring(0, 150)}`);
-        } else {
-          // 2차: 제외 패턴만 없는 일반 이미지
-          const generalImages = imageMatches.filter(url => {
-            const lowerUrl = url.toLowerCase();
-            return !excludePatterns.some(pattern => lowerUrl.includes(pattern));
-          });
-
-          if (generalImages.length > 0) {
-            imageUrl = generalImages[0];
-            console.log(`[General Image Selected] ${imageUrl.substring(0, 150)}`);
-          } else if (imageMatches.length > 0) {
-            // 3차: 아무 이미지나 사용
-            imageUrl = imageMatches[0];
-            console.log(`[Fallback Image Used] ${imageUrl.substring(0, 150)}`);
+          if (hasPriorityPattern) {
+            imageUrl = url;
+            console.log(`[✓ First Priority Image Selected] ${imageUrl.substring(0, 150)}`);
+            break;
           }
         }
 
-        // 디버깅: 찾은 이미지 URL 목록 출력
-        if (priorityImages.length > 0) {
-          console.log(`[Debug] Priority images (${priorityImages.length}):`,
-            priorityImages.slice(0, 3).map(url => url.substring(0, 80)));
+        // 우선순위 이미지를 못 찾았으면, 제외 패턴만 없는 첫 번째 이미지 선택
+        if (!imageUrl) {
+          for (const url of uniqueImages) {
+            const lowerUrl = url.toLowerCase();
+            const hasExcludePattern = excludePatterns.some(pattern => lowerUrl.includes(pattern));
+
+            if (!hasExcludePattern) {
+              imageUrl = url;
+              console.log(`[✓ First General Image Selected] ${imageUrl.substring(0, 150)}`);
+              break;
+            }
+          }
+        }
+
+        // 그래도 없으면 첫 번째 이미지 사용
+        if (!imageUrl && uniqueImages.length > 0) {
+          imageUrl = uniqueImages[0];
+          console.log(`[✓ First Fallback Image Used] ${imageUrl.substring(0, 150)}`);
         }
       }
     }
