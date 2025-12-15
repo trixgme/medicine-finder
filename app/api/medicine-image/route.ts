@@ -97,59 +97,55 @@ async function crawlGoogleImage(medicineName: string): Promise<string | null> {
     console.log(`[Debug] Total images found: ${$('img').length}`);
 
     let imageUrl: string | null = null;
-    const validImages: string[] = [];
+    const validImages: Array<{ url: string; alt: string; index: number }> = [];
 
-    // 모든 이미지를 검사하여 유효한 이미지 찾기
-    $('img').each((i, elem) => {
-      const src = $(elem).attr('src');
-      const dataSrc = $(elem).attr('data-src');
-      const alt = $(elem).attr('alt');
-      const width = $(elem).attr('width');
-      const height = $(elem).attr('height');
+    // 이미지 검색 결과의 메타데이터에서 실제 이미지 URL 추출
+    // 구글은 img 태그의 data 속성이나 부모 요소에 실제 이미지 정보를 저장
+    $('img[alt]').each((i, elem) => {
+      const $img = $(elem);
+      const alt = $img.attr('alt');
+      const width = $img.attr('width');
+      const height = $img.attr('height');
 
-      // 디버깅 정보
-      if (i < 15) { // 처음 15개만 로그
-        console.log(`[Debug] Image ${i}:`, {
-          src: src?.substring(0, 80),
-          dataSrc: dataSrc?.substring(0, 80),
-          alt: alt?.substring(0, 50),
+      // 썸네일 크기 이미지만 선택 (구글 검색 결과)
+      const w = parseInt(width || '0');
+      const h = parseInt(height || '0');
+
+      // alt가 있고, 크기가 충분한 이미지 (구글 검색 결과 썸네일)
+      if (alt && w >= 100 && h >= 100) {
+        // 부모 또는 조상 요소에서 실제 이미지 URL 찾기
+        const $parent = $img.closest('a, div[data-lpage], div[jsname]');
+        const href = $parent.attr('href');
+
+        console.log(`[Debug] Thumbnail ${i}:`, {
+          alt: alt.substring(0, 50),
           width,
-          height
+          height,
+          href: href?.substring(0, 80)
         });
-      }
 
-      const imgUrl = dataSrc || src;
-
-      // 유효한 이미지 필터링
-      // 1x1 픽셀 이미지나 placeholder 제외
-      const isPlaceholder = imgUrl?.includes('R0lGODlhAQABAIAAAP') ||
-                          (width === '1' && height === '1') ||
-                          imgUrl?.includes('data:image/gif;base64,R0lGODlhAQABAIAAAP');
-
-      if (imgUrl &&
-          !isPlaceholder &&
-          !imgUrl.includes('/logos/') &&
-          !imgUrl.includes('google.com/images/branding') &&
-          !imgUrl.includes('gstatic.com/images/icons') &&
-          (imgUrl.startsWith('http') ||
-           imgUrl.startsWith('//') ||
-           (imgUrl.startsWith('data:image') && imgUrl.length > 200))) { // base64는 200자 이상만
-
-        // https 추가
-        const fullUrl = imgUrl.startsWith('//') ? 'https:' + imgUrl : imgUrl;
-        validImages.push(fullUrl);
+        // href에서 이미지 URL 추출 시도
+        if (href) {
+          try {
+            const url = new URL(href, 'https://www.google.com');
+            const imgurl = url.searchParams.get('imgurl');
+            if (imgurl) {
+              validImages.push({ url: imgurl, alt, index: i });
+              console.log(`[✓ Found imgurl] ${imgurl.substring(0, 100)}`);
+            }
+          } catch (e) {
+            // URL 파싱 실패
+          }
+        }
       }
     });
 
-    console.log(`[Debug] Valid images found: ${validImages.length}`);
-    if (validImages.length > 0) {
-      console.log('[Debug] First 3 valid images:', validImages.slice(0, 3).map(url => url.substring(0, 100)));
-    }
+    console.log(`[Debug] Valid thumbnail images found: ${validImages.length}`);
 
-    // 첫 번째 유효한 이미지 선택
+    // 첫 번째 유효한 썸네일 이미지 선택
     if (validImages.length > 0) {
-      imageUrl = validImages[0];
-      console.log(`[Image Selected] ${medicineName}: ${imageUrl.substring(0, 150)}`);
+      imageUrl = validImages[0].url;
+      console.log(`[✓ First Thumbnail Image Selected] ${medicineName}: ${imageUrl.substring(0, 150)}`);
     }
 
     // 이미지를 못 찾은 경우 encrypted-tbn URL 찾기 (구글 썸네일)
