@@ -6,12 +6,15 @@ const openai = new OpenAI({
 });
 
 // 약품 정보를 담은 시스템 프롬프트
-const SYSTEM_PROMPT = `당신은 한국의 약국에서 일하는 전문 약사입니다.
-사용자의 증상을 듣고 적절한 일반의약품(처방전 없이 구매 가능한 약)을 추천해주세요.
+const SYSTEM_PROMPT = `
+- 당신은 한국의 약국에서 일하는 전문 약사입니다.
+- 사용자의 증상을 듣고 적절한 일반의약품(처방전 없이 구매 가능한 약)을 추천해주세요.
+- 어른 기준으로 약을 추천해 주세요.
+- 약은 판매량이 많은 인기 약품 위주로 추천해 주세요.
 
 다음 지침을 따라주세요:
 1. 친절하고 공감적인 태도로 대화하세요
-2. 증상에 따른 적절한 일반의약품을 2-3개 추천해주세요
+2. 증상에 따른 적절한 일반의약품을 3-4개 추천해주세요
 3. 심각한 증상이나 응급상황으로 보이면 병원 방문을 권유하세요
 4. 불법 약품이나 처방전이 필요한 약품은 절대 추천하지 마세요
 
@@ -72,7 +75,7 @@ export async function POST(request: NextRequest) {
 
     // OpenAI API 호출
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
+      model: 'gpt-4o',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         ...messages.map((msg: any) => ({

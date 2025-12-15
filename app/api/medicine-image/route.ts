@@ -199,42 +199,61 @@ async function crawlGoogleImage(medicineName: string): Promise<string | null> {
       if (imageMatches && imageMatches.length > 0) {
         console.log(`[Script Images Found] ${imageMatches.length} images in scripts`);
 
-        // 유효한 이미지 URL 필터링
-        const validScriptImages = imageMatches.filter(url => {
-          // 광고, 로고, 아이콘 등 제외
-          return !url.includes('logo') &&
-                 !url.includes('icon') &&
-                 !url.includes('banner') &&
-                 !url.includes('ads') &&
-                 !url.includes('google') &&
-                 !url.includes('gstatic') &&
-                 (url.includes('medicine') ||
-                  url.includes('drug') ||
-                  url.includes('pharm') ||
-                  url.includes('health') ||
-                  url.includes('product') ||
-                  url.includes('item') ||
-                  url.includes('image') ||
-                  url.includes('img') ||
-                  url.includes('photo') ||
-                  url.includes('picture') ||
-                  url.includes('cdn') ||
-                  url.includes('static') ||
-                  url.includes('upload') ||
-                  url.includes('content') ||
-                  url.includes('media') ||
-                  url.includes('.namu.') ||  // 나무위키 이미지
-                  url.includes('.whosaeng.') ||  // 후생 이미지
-                  url.includes('ctfassets'));  // 컨텐츠 서버
+        // 제외할 도메인/패턴
+        const excludePatterns = [
+          'logo', 'icon', 'banner', 'ads', 'advertisement',
+          'google.com', 'gstatic.com', 'googleusercontent.com',
+          'youtube.com', 'ytimg.com', 'facebook', 'twitter',
+          '1x1', 'pixel', 'tracking', 'analytics'
+        ];
+
+        // 우선순위가 높은 도메인/패턴
+        const priorityPatterns = [
+          'ctfassets.net',      // Contentful CDN (타이레놀 공식)
+          'whosaeng.com',       // 후생신보
+          'k-health.com',       // 헬스경향
+          'namu.wiki',          // 나무위키
+          'kpanews.co.kr',      // 약사공론
+          'mfds.go.kr',         // 식약처
+          'nedrug.mfds.go.kr',  // 의약품안전나라
+          'health.kr',
+          'pharmnews',
+          'medical',
+          'pharm'
+        ];
+
+        // 1차: 우선순위 패턴에 매칭되는 이미지
+        const priorityImages = imageMatches.filter(url => {
+          const lowerUrl = url.toLowerCase();
+          const hasExcludePattern = excludePatterns.some(pattern => lowerUrl.includes(pattern));
+          const hasPriorityPattern = priorityPatterns.some(pattern => lowerUrl.includes(pattern));
+          return !hasExcludePattern && hasPriorityPattern;
         });
 
-        if (validScriptImages.length > 0) {
-          imageUrl = validScriptImages[0];
-          console.log(`[Script Image Selected] ${imageUrl}`);
-        } else if (imageMatches.length > 0) {
-          // 필터링된 이미지가 없으면 첫 번째 이미지 사용
-          imageUrl = imageMatches[0];
-          console.log(`[First Script Image Used] ${imageUrl}`);
+        if (priorityImages.length > 0) {
+          imageUrl = priorityImages[0];
+          console.log(`[Priority Image Selected] ${imageUrl.substring(0, 150)}`);
+        } else {
+          // 2차: 제외 패턴만 없는 일반 이미지
+          const generalImages = imageMatches.filter(url => {
+            const lowerUrl = url.toLowerCase();
+            return !excludePatterns.some(pattern => lowerUrl.includes(pattern));
+          });
+
+          if (generalImages.length > 0) {
+            imageUrl = generalImages[0];
+            console.log(`[General Image Selected] ${imageUrl.substring(0, 150)}`);
+          } else if (imageMatches.length > 0) {
+            // 3차: 아무 이미지나 사용
+            imageUrl = imageMatches[0];
+            console.log(`[Fallback Image Used] ${imageUrl.substring(0, 150)}`);
+          }
+        }
+
+        // 디버깅: 찾은 이미지 URL 목록 출력
+        if (priorityImages.length > 0) {
+          console.log(`[Debug] Priority images (${priorityImages.length}):`,
+            priorityImages.slice(0, 3).map(url => url.substring(0, 80)));
         }
       }
     }
@@ -308,17 +327,45 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// 캐시 상태 확인 API (디버깅용)
+// 캐시 상태 확인 및 관리 API
 export async function POST(request: NextRequest) {
-  const cacheStatus = {
-    size: imageCache.size,
-    entries: Array.from(imageCache.entries()).map(([key, value]) => ({
-      medicine: key,
-      hasImage: !!value.imageUrl,
-      imagePreview: value.imageUrl ? value.imageUrl.substring(0, 100) : null,
-      age: Math.floor((Date.now() - value.timestamp) / 1000 / 60) + ' minutes'
-    }))
-  };
+  try {
+    const body = await request.json();
+    const action = body.action;
 
-  return NextResponse.json(cacheStatus);
+    if (action === 'clear') {
+      // 캐시 전체 삭제
+      const size = imageCache.size;
+      imageCache.clear();
+      console.log(`[Cache Cleared] ${size} entries deleted`);
+      return NextResponse.json({ message: 'Cache cleared', deletedCount: size });
+    }
+
+    if (action === 'delete' && body.medicineName) {
+      // 특정 약품 캐시 삭제
+      const existed = imageCache.has(body.medicineName);
+      imageCache.delete(body.medicineName);
+      console.log(`[Cache Deleted] ${body.medicineName}: ${existed ? 'existed' : 'not found'}`);
+      return NextResponse.json({ message: 'Cache entry deleted', existed });
+    }
+
+    // 캐시 상태 확인 (기본)
+    const cacheStatus = {
+      size: imageCache.size,
+      entries: Array.from(imageCache.entries()).map(([key, value]) => ({
+        medicine: key,
+        hasImage: !!value.imageUrl,
+        imagePreview: value.imageUrl ? value.imageUrl.substring(0, 100) : null,
+        age: Math.floor((Date.now() - value.timestamp) / 1000 / 60) + ' minutes'
+      }))
+    };
+
+    return NextResponse.json(cacheStatus);
+  } catch (error) {
+    console.error('[Cache API Error]:', error);
+    return NextResponse.json(
+      { error: 'Failed to process cache request' },
+      { status: 500 }
+    );
+  }
 }
