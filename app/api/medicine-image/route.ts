@@ -99,53 +99,54 @@ async function crawlGoogleImage(medicineName: string): Promise<string | null> {
     let imageUrl: string | null = null;
     const validImages: Array<{ url: string; alt: string; index: number }> = [];
 
-    // 이미지 검색 결과의 메타데이터에서 실제 이미지 URL 추출
-    // 구글은 img 태그의 data 속성이나 부모 요소에 실제 이미지 정보를 저장
-    $('img[alt]').each((i, elem) => {
+    // 구글 이미지 검색 결과에서 dimg_ ID를 가진 이미지 찾기
+    // 이것이 실제 검색 결과 썸네일입니다
+    const dimgImages = $('img[id^="dimg_"]');
+    console.log(`[Debug] Found ${dimgImages.length} dimg images`);
+
+    dimgImages.each((i, elem) => {
       const $img = $(elem);
+      const id = $img.attr('id');
       const alt = $img.attr('alt');
-      const width = $img.attr('width');
-      const height = $img.attr('height');
+      const src = $img.attr('src');
 
-      // 썸네일 크기 이미지만 선택 (구글 검색 결과)
-      const w = parseInt(width || '0');
-      const h = parseInt(height || '0');
+      console.log(`[Debug] dimg ${i}:`, {
+        id: id?.substring(0, 30),
+        alt: alt?.substring(0, 50),
+        src: src?.substring(0, 80)
+      });
 
-      // alt가 있고, 크기가 충분한 이미지 (구글 검색 결과 썸네일)
-      if (alt && w >= 100 && h >= 100) {
-        // 부모 또는 조상 요소에서 실제 이미지 URL 찾기
-        const $parent = $img.closest('a, div[data-lpage], div[jsname]');
-        const href = $parent.attr('href');
+      // 부모 링크에서 실제 이미지 URL 찾기
+      const $link = $img.closest('a');
+      const href = $link.attr('href');
 
-        console.log(`[Debug] Thumbnail ${i}:`, {
-          alt: alt.substring(0, 50),
-          width,
-          height,
-          href: href?.substring(0, 80)
-        });
+      if (href) {
+        try {
+          const url = new URL(href, 'https://www.google.com');
+          const imgurl = url.searchParams.get('imgurl');
 
-        // href에서 이미지 URL 추출 시도
-        if (href) {
-          try {
-            const url = new URL(href, 'https://www.google.com');
-            const imgurl = url.searchParams.get('imgurl');
-            if (imgurl) {
-              validImages.push({ url: imgurl, alt, index: i });
-              console.log(`[✓ Found imgurl] ${imgurl.substring(0, 100)}`);
-            }
-          } catch (e) {
-            // URL 파싱 실패
+          if (imgurl) {
+            validImages.push({ url: imgurl, alt: alt || '', index: i });
+            console.log(`[✓ Found imgurl from dimg_${i}] ${imgurl.substring(0, 100)}`);
           }
+        } catch (e) {
+          console.log(`[Error parsing URL for dimg_${i}]`, e);
         }
+      }
+
+      // 또는 src가 base64가 아닌 실제 URL인 경우
+      if (src && src.startsWith('http') && !src.includes('R0lGODlhAQABAIAAAP')) {
+        validImages.push({ url: src, alt: alt || '', index: i });
+        console.log(`[✓ Found direct src from dimg_${i}] ${src.substring(0, 100)}`);
       }
     });
 
-    console.log(`[Debug] Valid thumbnail images found: ${validImages.length}`);
+    console.log(`[Debug] Valid dimg images found: ${validImages.length}`);
 
-    // 첫 번째 유효한 썸네일 이미지 선택
+    // 첫 번째 유효한 이미지 선택
     if (validImages.length > 0) {
       imageUrl = validImages[0].url;
-      console.log(`[✓ First Thumbnail Image Selected] ${medicineName}: ${imageUrl.substring(0, 150)}`);
+      console.log(`[✓ First dimg Image Selected] ${medicineName}: ${imageUrl.substring(0, 150)}`);
     }
 
     // 이미지를 못 찾은 경우 encrypted-tbn URL 찾기 (구글 썸네일)
