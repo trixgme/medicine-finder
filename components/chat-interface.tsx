@@ -142,13 +142,13 @@ export default function ChatInterface() {
           <div className="space-y-3">
             <p className="font-semibold text-sm">추천 약품:</p>
             {medicines.map((medicine, index) => (
-              <Card key={index} className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800">
+              <Card key={index} className="bg-rose-50/50 dark:bg-rose-900/10 border-rose-200 dark:border-rose-800">
                 <CardContent className="p-6">
                   <div className="space-y-4">
                     {/* 약품명 헤더 */}
                     <div className="flex items-center gap-2 justify-center mb-4">
-                      <Pill className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                      <h4 className="font-bold text-xl text-blue-900 dark:text-blue-100">{medicine.name}</h4>
+                      <Pill className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                      <h4 className="font-bold text-xl text-rose-900 dark:text-rose-100">{medicine.name}</h4>
                     </div>
 
                     {/* 큰 이미지 */}
@@ -209,9 +209,9 @@ export default function ChatInterface() {
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto h-[80vh] flex flex-col">
-      <CardHeader className="border-b">
-        <CardTitle className="flex items-center gap-2">
+    <Card className="w-full max-w-4xl mx-auto h-[80vh] flex flex-col shadow-2xl">
+      <CardHeader className="border-b bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-950/20 dark:to-pink-950/20">
+        <CardTitle className="flex items-center gap-2 text-rose-700 dark:text-rose-300">
           <Bot className="w-6 h-6" />
           약국 도우미 AI
         </CardTitle>
@@ -228,7 +228,7 @@ export default function ChatInterface() {
               >
                 {message.role === 'assistant' && (
                   <Avatar className="w-8 h-8">
-                    <AvatarFallback>
+                    <AvatarFallback className="bg-rose-100 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400">
                       <Bot className="w-4 h-4" />
                     </AvatarFallback>
                   </Avatar>
@@ -239,7 +239,7 @@ export default function ChatInterface() {
                   }`}
                 >
                   {message.role === 'user' ? (
-                    <div className="rounded-lg px-4 py-2 bg-primary text-primary-foreground">
+                    <div className="rounded-lg px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-md">
                       <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                     </div>
                   ) : (
@@ -256,7 +256,7 @@ export default function ChatInterface() {
                 </div>
                 {message.role === 'user' && (
                   <Avatar className="w-8 h-8">
-                    <AvatarFallback>
+                    <AvatarFallback className="bg-gradient-to-r from-rose-500 to-pink-500 text-white">
                       <User className="w-4 h-4" />
                     </AvatarFallback>
                   </Avatar>
@@ -266,15 +266,15 @@ export default function ChatInterface() {
             {isLoading && (
               <div className="flex gap-3 justify-start">
                 <Avatar className="w-8 h-8">
-                  <AvatarFallback>
+                  <AvatarFallback className="bg-rose-100 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400">
                     <Bot className="w-4 h-4" />
                   </AvatarFallback>
                 </Avatar>
                 <div className="bg-muted rounded-lg px-4 py-2">
                   <div className="flex space-x-2">
-                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    <div className="w-2 h-2 bg-rose-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-rose-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-rose-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                   </div>
                 </div>
               </div>

@@ -2,10 +2,10 @@ import ChatInterface from '@/components/chat-interface';
 
 export default function Home() {
   return (
-    <main className="container mx-auto p-4 min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
+    <main className="container mx-auto p-4 min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-rose-50 to-white dark:from-gray-900 dark:to-gray-800">
       <div className="w-full max-w-6xl">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent mb-2">
             약국 도우미 AI
           </h1>
           <p className="text-muted-foreground">
