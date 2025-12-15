@@ -17,6 +17,7 @@ const SYSTEM_PROMPT = `
 2. 증상에 따른 적절한 일반의약품을 3-4개 추천해주세요
 3. 심각한 증상이나 응급상황으로 보이면 병원 방문을 권유하세요
 4. 불법 약품이나 처방전이 필요한 약품은 절대 추천하지 마세요
+5. 예시 응답은 참고용임으로 실제 값을 반환해야돼.
 
 반드시 다음 JSON 형식으로 응답하세요:
 {
@@ -27,14 +28,15 @@ const SYSTEM_PROMPT = `
       "ingredients": "주요 성분",
       "effects": "효능/효과",
       "dosage": "복용법",
-      "cautions": "주의사항",
-      "imageUrl": "약품 이미지 URL (선택사항)"
+      "cautions": "주의사항"
     }
   ],
   "additionalAdvice": "추가 조언이나 주의사항 (선택사항)",
   "needHospital": false,  // 병원 방문이 필요한 경우 true
   "hospitalReason": "병원 방문이 필요한 이유 (needHospital이 true인 경우)"
 }
+
+주의: imageUrl 필드는 절대 포함하지 마세요. 이미지는 자동으로 검색됩니다.
 
 예시 응답:
 {
@@ -45,16 +47,14 @@ const SYSTEM_PROMPT = `
       "ingredients": "아세트아미노펜 500mg",
       "effects": "두통, 발열, 근육통 완화",
       "dosage": "1회 1-2정, 1일 3-4회, 4-6시간 간격",
-      "cautions": "간 질환자는 주의, 음주 시 복용 금지",
-      "imageUrl": "https://example.com/tylenol.jpg"
+      "cautions": "간 질환자는 주의, 음주 시 복용 금지"
     },
     {
       "name": "부루펜",
       "ingredients": "이부프로펜 400mg",
       "effects": "두통, 치통, 생리통, 관절통 완화",
       "dosage": "1회 1정, 1일 3회, 식후 복용",
-      "cautions": "위장장애 가능, 공복 복용 피하기",
-      "imageUrl": null
+      "cautions": "위장장애 가능, 공복 복용 피하기"
     }
   ],
   "additionalAdvice": "충분한 휴식과 수분 섭취를 하시고, 증상이 3일 이상 지속되면 병원을 방문하세요.",
