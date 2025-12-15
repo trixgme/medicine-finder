@@ -154,7 +154,7 @@ export default function ChatInterface() {
                     {/* 큰 이미지 */}
                     {medicine.imageUrl && (
                       <div className="flex justify-center mb-4">
-                        <div className="relative bg-white rounded-xl shadow-xl p-4">
+                        <div className="relative bg-white rounded-xl shadow-xl p-4 min-h-[300px] flex items-center justify-center">
                           <Image
                             src={medicine.imageUrl}
                             alt={medicine.name}
@@ -162,6 +162,17 @@ export default function ChatInterface() {
                             height={300}
                             className="rounded-lg object-contain max-h-[300px]"
                             unoptimized
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const parent = target.parentElement;
+                              if (parent && !parent.querySelector('.fallback-message')) {
+                                const fallback = document.createElement('div');
+                                fallback.className = 'fallback-message text-gray-400 text-sm text-center';
+                                fallback.textContent = '이미지를 불러올 수 없습니다';
+                                parent.appendChild(fallback);
+                              }
+                            }}
                           />
                         </div>
                       </div>

@@ -204,7 +204,8 @@ async function crawlGoogleImage(medicineName: string): Promise<string | null> {
           'logo', 'icon', 'banner', 'ads', 'advertisement',
           'google.com', 'gstatic.com', 'googleusercontent.com',
           'youtube.com', 'ytimg.com', 'facebook', 'twitter',
-          '1x1', 'pixel', 'tracking', 'analytics'
+          '1x1', 'pixel', 'tracking', 'analytics',
+          'example.com', 'test.com', 'placeholder', 'dummy'
         ];
 
         // 우선순위가 높은 도메인/패턴
@@ -267,6 +268,25 @@ async function crawlGoogleImage(medicineName: string): Promise<string | null> {
         console.log(`[Base64 Image Size] ${base64Length} characters`);
         if (base64Length < 200) {
           console.log('[Warning] Base64 image too small, likely a placeholder');
+          return null;
+        }
+      }
+
+      // URL 유효성 검증 (http/https로 시작하는 경우)
+      if (imageUrl.startsWith('http')) {
+        try {
+          const urlObj = new URL(imageUrl);
+
+          // example.com, test.com 등 테스트 도메인 제외
+          const invalidDomains = ['example.com', 'example.org', 'example.net', 'test.com', 'localhost'];
+          if (invalidDomains.some(domain => urlObj.hostname.includes(domain))) {
+            console.log(`[Invalid Domain] ${urlObj.hostname} - skipping`);
+            return null;
+          }
+
+          console.log(`[Valid URL] ${urlObj.hostname}`);
+        } catch (error) {
+          console.log(`[Invalid URL Format] ${imageUrl}`);
           return null;
         }
       }
